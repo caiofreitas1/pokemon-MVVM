@@ -57,11 +57,6 @@ class PokemonListViewModel @Inject constructor(
                         }
                     currentPage++
                     isLoading.value = false
-                    //Log pokemon listNames
-                    pokemonBasicInformationList?.forEach {
-                        Log.d("PokemonListViewModel", "Pokemon Name: ${it.name}")
-                    }
-
                     pokemonList.value += pokemonBasicInformationList ?: listOf()
                 }
 

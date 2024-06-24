@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -87,7 +88,7 @@ fun PokemonListScreen(
 @Composable
 fun SearchBar(
     modifier: Modifier = Modifier,
-    hint: String = "Search",
+    hint: String = "Search pokemon by name",
     onSearch: (String) -> Unit,
 ) {
     var text by remember {
@@ -199,14 +200,14 @@ fun PokemonBasicCard(
             .background(Brush.horizontalGradient(listOf(defaultPredominantColor, predominantColor)))
             .clickable {
                 navController.navigate(
-                    "pokemon_details/${predominantColor.value}/${pokemon.name}"
+                    "pokemon_details/${pokemon.name}/${predominantColor.toArgb()}"
                 )
             }
     )
     {
         Column(
             modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = CenterHorizontally
         ) {
             AsyncImage(
                 model = ImageRequest.Builder(context)
