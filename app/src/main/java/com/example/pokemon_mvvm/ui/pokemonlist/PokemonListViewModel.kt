@@ -1,11 +1,14 @@
 package com.example.pokemon_mvvm.ui.pokemonlist
 
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
-import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.palette.graphics.Palette
 import com.example.pokemon_mvvm.data.remote.Result
 import com.example.pokemon_mvvm.domain.model.PokemonBasicInformation
 import com.example.pokemon_mvvm.domain.repository.PokemonRepository
@@ -13,7 +16,6 @@ import com.example.pokemon_mvvm.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import androidx.palette.graphics.Palette as Pallet
 
 @HiltViewModel
 class PokemonListViewModel @Inject constructor(
@@ -26,12 +28,22 @@ class PokemonListViewModel @Inject constructor(
     var isLoading = mutableStateOf(false)
     var endReached = mutableStateOf(false)
 
+    private var cachedPokemonList = listOf<PokemonBasicInformation>()
+    private var isSearchStarting = true
+    var isSearching = mutableStateOf(false)
+
+
+    init {
+        getPokemonsPaginated()
+    }
+
     fun getPokemonsPaginated() {
+        // log current page value
+        Log.d("PokemonListViewModel", "currentPage: $currentPage")
         viewModelScope.launch {
             isLoading.value = true
-            val response = repository.getPokemonList(currentPage * PAGE_SIZE, PAGE_SIZE)
 
-            when (response) {
+            when (val response = repository.getPokemonList(PAGE_SIZE, currentPage * PAGE_SIZE)) {
                 is Resource.Success -> {
                     endReached.value = response.data?.results?.isEmpty() ?: true
                     val pokemonBasicInformationList =
@@ -43,8 +55,13 @@ class PokemonListViewModel @Inject constructor(
                                 imageUrl = getPokemonUrlImage(pokemonId.toInt())
                             )
                         }
-                    currentPage.inc()
+                    currentPage++
                     isLoading.value = false
+                    //Log pokemon listNames
+                    pokemonBasicInformationList?.forEach {
+                        Log.d("PokemonListViewModel", "Pokemon Name: ${it.name}")
+                    }
+
                     pokemonList.value += pokemonBasicInformationList ?: listOf()
                 }
 
@@ -68,15 +85,34 @@ class PokemonListViewModel @Inject constructor(
         return "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$pokemonId.png"
     }
 
-    fun calcPredominantColorByDrawable(drawable: Drawable, onFinish: (Color) -> Unit) {
-        val bitmap = drawable.toBitmap()
+    fun calculatePredominantColorByDrawable(drawable: Drawable, onFinish: (Color) -> Unit) {
+        val bitmap = (drawable as BitmapDrawable).bitmap.copy(Bitmap.Config.ARGB_8888, true)
 
-        Pallet.from(bitmap).generate { palette ->
+        Palette.from(bitmap).generate { palette ->
             val color = palette?.dominantSwatch?.rgb?.let {
                 Color(it)
             } ?: Color.White
             onFinish(color)
         }
+    }
+
+    fun searchPokemonList(query: String) {
+        if (query.isEmpty()) {
+            pokemonList.value = cachedPokemonList
+            isSearching.value = false
+            return
+        }
+
+        if (isSearchStarting) {
+            cachedPokemonList = pokemonList.value
+            isSearchStarting = false
+        }
+
+        val filteredList = cachedPokemonList.filter {
+            it.name.contains(query, ignoreCase = true)
+        }
+        pokemonList.value = filteredList
+        isSearching.value = false
     }
 
     companion object {

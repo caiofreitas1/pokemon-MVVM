@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -25,12 +27,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -49,9 +53,10 @@ import com.example.pokemon_mvvm.domain.model.PokemonBasicInformation
 @Composable
 fun PokemonListScreen(
     navController: NavController,
+    viewModel: PokemonListViewModel = hiltViewModel(),
 ) {
     Surface(
-        color = Color.LightGray,
+        color = Color.White,
         modifier = Modifier.fillMaxSize()
     ) {
         Column {
@@ -69,8 +74,12 @@ fun PokemonListScreen(
                     .fillMaxWidth()
                     .padding(16.dp),
                 hint = "Search Pokemon",
-                onSearch = { /*TODO*/ }
+                onSearch = {
+                    viewModel.searchPokemonList(it)
+                }
             )
+            Spacer(modifier = Modifier.height(20.dp))
+            PokemonList(navController = navController)
         }
     }
 }
@@ -103,7 +112,7 @@ fun SearchBar(
                 .background(color = Color.White, shape = CircleShape)
                 .padding(horizontal = 20.dp, vertical = 12.dp)
                 .onFocusChanged { focusState ->
-                    isHintDisplayed = !focusState.isFocused
+                    isHintDisplayed = !focusState.isFocused && text.isEmpty()
                 }
         )
 
@@ -114,6 +123,55 @@ fun SearchBar(
                 style = TextStyle(color = Color.LightGray),
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
             )
+        }
+
+        Image(
+            painter = painterResource(id = R.drawable.pokeball_image),
+            contentDescription = "Pokeball",
+            modifier = Modifier
+                .size(40.dp)
+                .padding(end = 16.dp)
+                .align(Alignment.CenterEnd)
+        )
+    }
+}
+
+@Composable
+fun PokemonList(
+    navController: NavController,
+    viewModel: PokemonListViewModel = hiltViewModel(),
+) {
+    val pokemonList by remember {
+        viewModel.pokemonList
+    }
+
+    val endReached by remember {
+        viewModel.endReached
+    }
+
+    val loadError by remember {
+        viewModel.loadError
+    }
+
+    val isLoading by remember {
+        viewModel.isLoading
+    }
+
+    val isSearching by remember {
+        viewModel.isSearching
+    }
+
+    LazyColumn(contentPadding = PaddingValues(16.dp)) {
+        val itemCount = if (pokemonList.size % 2 == 0) {
+            pokemonList.size / 2
+        } else {
+            pokemonList.size / 2 + 1
+        }
+        items(itemCount) {
+            if (it >= itemCount - 1 && !endReached && !isLoading && !isSearching) {
+                viewModel.getPokemonsPaginated()
+            }
+            PokemonRow(rowIndex = it, pokemons = pokemonList, navController = navController)
         }
     }
 }
@@ -138,7 +196,7 @@ fun PokemonBasicCard(
             .shadow(10.dp, RoundedCornerShape(10.dp))
             .clip(RoundedCornerShape(10.dp))
             .aspectRatio(1f)
-            .background(color = Color.DarkGray)
+            .background(Brush.horizontalGradient(listOf(defaultPredominantColor, predominantColor)))
             .clickable {
                 navController.navigate(
                     "pokemon_details/${predominantColor.value}/${pokemon.name}"
@@ -146,7 +204,10 @@ fun PokemonBasicCard(
             }
     )
     {
-        Column {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(pokemon.imageUrl)
@@ -156,14 +217,13 @@ fun PokemonBasicCard(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(120.dp)
-                    .align(CenterHorizontally)
                     .clip(RoundedCornerShape(10.dp)),
                 onState = { state ->
                     isLoading = when (state) {
                         is AsyncImagePainter.State.Loading -> true
                         is AsyncImagePainter.State.Success -> {
                             val drawable = state.result.drawable
-                            viewModel.calcPredominantColorByDrawable(drawable) { color ->
+                            viewModel.calculatePredominantColorByDrawable(drawable) { color ->
                                 predominantColor = color
                             }
                             false
@@ -173,7 +233,17 @@ fun PokemonBasicCard(
                 }
             )
 
-            if (isLoading) {
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "#${pokemon.id} - ${pokemon.name}".uppercase(),
+                style = MaterialTheme.typography.titleSmall,
+                color = Color.White
+            )
+        }
+
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize().background(color = Color.White), contentAlignment = Center) {
                 CircularProgressIndicator(
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -206,5 +276,6 @@ fun PokemonRow(
                 Spacer(modifier = Modifier.weight(1f))
             }
         }
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
