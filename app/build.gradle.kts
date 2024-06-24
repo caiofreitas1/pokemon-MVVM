@@ -69,6 +69,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material3:material3-icons-extended")
+    implementation("androidx.palette:palette-ktx:1.0.0")
 
     // Retrofit
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
@@ -80,9 +82,12 @@ dependencies {
     //DI
     implementation("com.google.dagger:hilt-android:2.51.1")
     annotationProcessor("com.google.dagger:hilt-android-compiler:2.51.1")
+    implementation("androidx.hilt:hilt-navigation-fragment:1.2.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     //Coil
     implementation("io.coil-kt:coil:2.6.0")
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
