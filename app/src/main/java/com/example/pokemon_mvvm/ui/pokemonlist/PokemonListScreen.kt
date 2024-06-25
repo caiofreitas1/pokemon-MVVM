@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,7 +43,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -150,10 +154,6 @@ fun PokemonList(
         viewModel.endReached
     }
 
-    val loadError by remember {
-        viewModel.loadError
-    }
-
     val isLoading by remember {
         viewModel.isLoading
     }
@@ -192,8 +192,10 @@ fun PokemonBasicCard(
         mutableStateOf(true)
     }
     val context = LocalContext.current
+
     Box(
-        contentAlignment = Center, modifier = modifier
+        contentAlignment = Center,
+        modifier = modifier
             .shadow(10.dp, RoundedCornerShape(10.dp))
             .clip(RoundedCornerShape(10.dp))
             .aspectRatio(1f)
@@ -203,10 +205,9 @@ fun PokemonBasicCard(
                     "pokemon_details/${pokemon.name}/${predominantColor.toArgb()}"
                 )
             }
-    )
-    {
+    ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(8.dp),
             horizontalAlignment = CenterHorizontally
         ) {
             AsyncImage(
@@ -217,7 +218,7 @@ fun PokemonBasicCard(
                 contentDescription = pokemon.name,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .size(120.dp)
+                    .size(100.dp)
                     .clip(RoundedCornerShape(10.dp)),
                 onState = { state ->
                     isLoading = when (state) {
@@ -238,13 +239,24 @@ fun PokemonBasicCard(
 
             Text(
                 text = "#${pokemon.id} - ${pokemon.name}".uppercase(),
-                style = MaterialTheme.typography.titleSmall,
-                color = Color.White
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                color = Color.White,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp)
+                    .wrapContentWidth(CenterHorizontally),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
         }
 
         if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize().background(color = Color.White), contentAlignment = Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = Color.White),
+                contentAlignment = Center
+            ) {
                 CircularProgressIndicator(
                     color = MaterialTheme.colorScheme.primary,
                 )
