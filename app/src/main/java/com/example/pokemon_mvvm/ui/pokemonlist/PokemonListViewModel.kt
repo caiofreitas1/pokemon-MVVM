@@ -38,8 +38,6 @@ class PokemonListViewModel @Inject constructor(
     }
 
     fun getPokemonsPaginated() {
-        // log current page value
-        Log.d("PokemonListViewModel", "currentPage: $currentPage")
         viewModelScope.launch {
             isLoading.value = true
 
@@ -47,7 +45,7 @@ class PokemonListViewModel @Inject constructor(
                 is Resource.Success -> {
                     endReached.value = response.data?.results?.isEmpty() ?: true
                     val pokemonBasicInformationList =
-                        response.data?.results?.mapIndexed { index, result ->
+                        response.data?.results?.mapIndexed { _, result ->
                             val pokemonId = extractPokemonIdFromResultUrl(result)
                             PokemonBasicInformation(
                                 id = pokemonId.toInt(),
@@ -61,7 +59,7 @@ class PokemonListViewModel @Inject constructor(
                 }
 
                 is Resource.Error -> {
-                    loadError.value = response.message ?: "An unexpected error occurred"
+                    loadError.value = response.message ?: DEFAULT_ERROR_MESSAGE
                     isLoading.value = false
 
                 }
@@ -112,5 +110,6 @@ class PokemonListViewModel @Inject constructor(
 
     companion object {
         const val PAGE_SIZE = 20
+        const val DEFAULT_ERROR_MESSAGE = "An unexpected error occurred"
     }
 }

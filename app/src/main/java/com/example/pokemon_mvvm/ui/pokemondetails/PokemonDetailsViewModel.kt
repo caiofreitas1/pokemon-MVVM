@@ -29,11 +29,15 @@ class PokemonDetailsViewModel @Inject constructor(
                     pokemonDetails.value = result.data
                 }
                 is Resource.Error -> {
-                    loadError.value = result.message ?: "An unexpected error occurred"
+                    loadError.value = result.message ?: ERROR_MESSAGE
                 }
             }
 
             isLoading.value = false
         }
+    }
+
+    companion object{
+        const val ERROR_MESSAGE = "An unexpected error occurred"
     }
 }
